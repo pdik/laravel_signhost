@@ -2,7 +2,7 @@
 
 namespace Pdik\laravel_signhost\Http\Controllers;
 use Illuminate\Http\Request;
-use Pdik\laravel_signhost\SignHost;
+use Pdik\laravel_signhost\Models\signatures;
 class Signature extends Controller
 {
    public function index(){

@@ -12,7 +12,8 @@
     ],
     "require": {
         "php": "^7.4",
-         "illuminate/pagination": "^8.31",
+        "illuminate/database": "^8.36",
+        "illuminate/pagination": "^8.31",
         "illuminate/routing": "^8.29",
         "illuminate/support": "^8.0",
         "illuminate/view": "^8.32"
