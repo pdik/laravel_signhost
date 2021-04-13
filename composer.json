@@ -1,0 +1,12 @@
+{
+    "name": "pdik/laravel_signhost",
+    "description": "A laravel package for Signhost",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "pepijn dik",
+            "email": "pepijn@pdik.nl"
+        }
+    ],
+    "require": {}
+}
