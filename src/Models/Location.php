@@ -1,5 +1,6 @@
 <?php
-namespace Signhost\Models;
+namespace pdik\signhost\Models;
+
 
 
 class Location
