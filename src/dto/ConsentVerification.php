@@ -1,9 +1,7 @@
 <?php
-namespace pdik\signhost\DTO;
+namespace pdik\signhost\dto;
 
-use pdik\signhost\DTO\verification;
-// Required due to inheritance.
-
+use pdik\signhost\dto\verification;
 use JsonSerializable;
 class ConsentVerification extends Verification implements JsonSerializable {
 	function __construct() {

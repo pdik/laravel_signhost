@@ -1,4 +1,7 @@
 <?php
+namespace  pdik\signhost\dto;
+use JsonSerializable;
+
 class FormSets implements JsonSerializable {
 	/** @var string[] */
 	public $FormSets;

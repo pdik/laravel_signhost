@@ -1,7 +1,7 @@
 <?php
-namespace pdik\signhost\DTO;
+namespace pdik\signhost\dto;
 
-use pdik\signhost\DTO\verification;
+use pdik\signhost\dto\verification;
 
 class EherkenningVerification extends Verification implements JsonSerializable {
 	/** @var string */

@@ -1,7 +1,7 @@
 <?php
-namespace pdik\signhost\DTO;
+namespace pdik\signhost\dto;
 
-use pdik\signhost\DTO\verification;
+use pdik\signhost\dto\verification;
 use JsonSerializable;
 
 class IDinVerification extends Verification implements JsonSerializable {

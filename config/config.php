@@ -5,17 +5,17 @@ return [
      * Signhost
      */
 
-    'app_key'=> '',
+    'app_key'=> env('SIGNHOST_KEY'),
 
     /**
-     * Secret key
+     * Secret keys
      */
+    'secret_key' => env('SIGNHOST_SECRET'),
+    'user_token' => env('SIGNHOST_USER'),
 
-    'secret_key' => 'fMaPBZYJh9OuOlIvFUELMxBLBJ0xV6pb',
-    'user_token' => 'yWI0niokvRcwmL9K3rq7Yaea04KPKzbN',
+    'api_postback'=> config('app.url','localhost').'/'.config('signhost_postback'),
+    'api_endpoint'=> 'https://api.signhost.com/api',
 
-    'api_postback'=> '',
-    'api_endpoint'=> '',
     'signRequestMessage' => '',
     'SendSignRequest' => true,
     'sendSignConfirmation' => true,

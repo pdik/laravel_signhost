@@ -1,5 +1,5 @@
 <?php
-namespace pdik\signhost\DTO;
+namespace pdik\signhost\dto;
 use JsonSerializable;
 class FormSetField implements JsonSerializable {
 	/** @var string */

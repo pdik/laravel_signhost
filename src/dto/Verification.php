@@ -1,5 +1,6 @@
 <?php
-namespace pdik\signhost\DTO;
+namespace pdik\signhost\dto;
+
 abstract class Verification {
 	/** @var string */
 	public $Type;

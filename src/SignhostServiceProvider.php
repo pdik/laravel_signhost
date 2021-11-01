@@ -1,6 +1,6 @@
 <?php
 
-namespace Pdik\laravel_signhost;
+namespace pdik\signhost;
 
 
 use Illuminate\Support\ServiceProvider;
@@ -11,7 +11,7 @@ class SignhostServiceProvider extends ServiceProvider
 	public function boot()
 	{
 		$this->registerConfigs();
-		//$this->registerMigrations();
+		$this->registerMigrations();
 		$this->registerViews();
 //		$this->registerComponents();
 //		$this->registerBladeDirectives();
@@ -25,23 +25,23 @@ class SignhostServiceProvider extends ServiceProvider
 		if ($this->app->runningInConsole()) {
 			$this->publishes([
 				__DIR__ . '/../config/config.php' => config_path('signhost_config.php'),
-			], 'laravel_signhost-config');
+			], 'signhost-config');
 			$this->publishes([
-				__DIR__ . '/../public' => public_path('vendor/Pdik/laravel_signhost'),
-			], 'laravel_signhost-assets');
+				__DIR__ . '/../public' => public_path('vendor/pdik/signhost'),
+			], 'signhost-assets');
 		}
 		$this->mergeConfigFrom(__DIR__ . '/../config/config.php', 'signhost_config');
 
 	}
 
-//	private function registerMigrations()
-//	{
-//		$this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
-//	}
+	private function registerMigrations()
+	{
+		$this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+	}
 
 	private function registerViews()
 	{
-		$this->loadViewsFrom(__DIR__ . '/../resources/views', 'laravel_signhost');
+		$this->loadViewsFrom(__DIR__ . '/../resources/views', 'signhost');
 	}
 
 	private function registerRoutes()
@@ -56,9 +56,9 @@ class SignhostServiceProvider extends ServiceProvider
 	private function routeConfiguration(): array
 	{
 		return [
-			'namespace' => 'Pdik\laravel_signhost\Http\Controllers',
+			'namespace' => 'pdik\signhost',
 			'middleware' => ['web'],
-			'as' => 'laravel_signhost::'
+			'as' => 'signhost::'
 		];
 	}
 

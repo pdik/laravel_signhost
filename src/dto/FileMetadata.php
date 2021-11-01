@@ -1,5 +1,5 @@
 <?php
-namespace pdik\signhost\DTO;
+namespace pdik\signhost\dto;
 use JsonSerializable;
 class FileMetadata implements JsonSerializable {
 	/** @var string */

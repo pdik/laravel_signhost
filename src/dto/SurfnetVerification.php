@@ -1,6 +1,7 @@
 <?php
+namespace  pdik\signhost\dto;
 // Required due to inheritance.
-require_once("verification.php");
+require_once("Verification.php");
 
 class SurfnetVerification extends Verification implements JsonSerializable {
 	function __construct() {
