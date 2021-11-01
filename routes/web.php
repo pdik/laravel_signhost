@@ -1,9 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use pdik\laravel_signhost\Http\Controllers\Signature;
 
-Route::prefix('signature')->group(function () {
+
+use pdik\signhost\Http\Controllers\Signature;
+
+Route::prefix('documents')->group(function () {
     /**
      * User Routes
      */
@@ -11,8 +13,12 @@ Route::prefix('signature')->group(function () {
         /**
          * Show signed document
          */
-        Route::get('view/{id}', [Signature::class, 'show']);
-        Route::get('sign/{id}', [Signature::class, 'sign']);
+        Route::get('view/{id}', [Signature::class, 'show'])
+            ->name('document.show');
+
+        Route::get('sign/{id}', [Signature::class, 'sign'])
+            ->middleware(['permission:documents.sign'])
+            ->name('document.sign');
     });
 
 });

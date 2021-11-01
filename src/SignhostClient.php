@@ -6,6 +6,7 @@ use pdik\signhost\Exception\SignhostException;
 use InvalidArgumentException;
 
 /**
+ * @copyright 2021 / 2025 pdik systems
  * @author Pepijn dik <pepijn@pdik.nl>
  */
 class SignhostClient
