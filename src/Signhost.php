@@ -5,89 +5,78 @@ namespace pdik\signhost;
 use pdik\signhost\dto\ScribbleVerification;
 use pdik\signhost\dto\Signer;
 use pdik\signhost\dto\Transaction;
+use pdik\signhost\Exception\SignhostException;
 
 class Signhost
 {
-    const API_VERSION = "v1";
-    const CLIENT_VERSION = "2.0-beta-2";
-
-    /** @var string */
-    public $AppKey;
-
-    /** @var string */
-    public $ApiKey;
-
-    /** @var string */
-    public $SharedSecret;
-
-    /** @var string */
-    public $ApiEndpoint;
+    /**
+     * @var SignhostClient
+     */
 
     private $client;
+    private bool $shouldReturnArray;
 
     /**
-     * @param  string  $appKey
-     * @param  string  $apiKey
-     * @param  string  $sharedSecret
-     * @param  string  $apiEndpoint
+     * @var string Defines the secret that can be used to verify file hashes
      */
-    function __construct()
-    {
-        $this->AppKey = config('signhost_config.app_key');
-        $this->ApiKey = config('signhost_config.user_token');
-        $this->SharedSecret = config('signhost_config.secret_key');
-        $this->ApiEndpoint = config('signhost_config.api_endpoint');
+    private $sharedSecret;
+
+    /**
+     * Signhost constructor.
+     */
+    public function __construct(
+        SignhostClient $client,
+        bool $shouldReturnArray,
+        $sharedSecret
+    ) {
+        $this->sharedSecret = $sharedSecret;
+        $this->client = $client;
+        $this->shouldReturnArray = $shouldReturnArray;
     }
 
     /**
-     * Generates a checksum and validates it with the remote checksum.
-     * @param  string  $masterTransactionId
-     * @param  string  $fileId
-     * @param  int  $status
-     * @param  string  $remoteChecksum
-     * @return bool
+     * @throws SignhostException
      */
-    public function ValidateChecksum($masterTransactionId, $fileId, $status, $remoteChecksum)
+    private function performRequest($method, $url, $data = null, $filePath = null)
     {
-        $localChecksum = sha1($masterTransactionId."|".$fileId."|".$status."|".$this->SharedSecret);
+        $response = $this->client->performRequest($url, $method, $data, $filePath);
 
-        if (strlen($localChecksum) !== strlen($remoteChecksum)) {
-            return false;
+        $result = @json_decode($response, $this->shouldReturnArray);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new SignhostException('Invalid JSON returned: '.json_last_error_msg());
         }
-
-        return hash_equals($localChecksum, $remoteChecksum);
+        return $result;
     }
 
-    public function isJson($string)
+    /**
+     * Returns the response directly (should be a Binary/PDF)
+     * @param $method
+     * @param $url
+     * @param  null  $data
+     * @param  null  $filePath
+     * @return mixed
+     * @throws SignhostException
+     */
+    private function performBinaryRequest($method, $url, $data = null, $filePath = null)
     {
-        return ((is_string($string) &&
-            (is_object(json_decode($string)) ||
-                is_array(json_decode($string))))) ? true : false;
+        $response = $this->client->performRequest($url, $method, $data, $filePath);
+        return $response;
     }
 
     /**
      * Creates a new transaction.
      * @param  Transaction  $transaction
      * @return Response
+     * @throws SignhostException
      */
     public function CreateTransaction($transaction)
     {
-        $ch = curl_init($this->ApiEndpoint."/transaction");
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($transaction));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            "Accept: application/vnd.signhost.".self::API_VERSION."+json",
-            "User-Agent: Signhost PHP Client/".self::CLIENT_VERSION,
-            "Content-Type: application/json",
-            "Application: APPKey ".$this->AppKey,
-            "Authorization: APIKey ".$this->ApiKey,
-        ));
-
-        $response = new Response($ch);
-        curl_close($ch);
-
-        return $response;
+        return $this->performRequest(
+            'POST',
+            '/transaction',
+            $transaction
+        );
     }
 
     /**
@@ -97,70 +86,35 @@ class Signhost
      * partial historical data from the JSON in the error message property.
      * @param  string  $transactionId
      * @return Response
+     * @throws SignhostException
      */
     public function GetTransaction($transactionId)
     {
-        $ch = curl_init($this->ApiEndpoint."/transaction/".$transactionId);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            "Accept: application/vnd.signhost.".self::API_VERSION."+json",
-            "User-Agent: Signhost PHP Client/".self::CLIENT_VERSION,
-            "Application: APPKey ".$this->AppKey,
-            "Authorization: APIKey ".$this->ApiKey,
-        ));
-
-        $response = new Response($ch);
-        curl_close($ch);
-
-        return $response;
+        return $this->performRequest('GET', '/transaction/'.$transactionId);
     }
 
     /**
      * Deletes an existing transaction by providing a transaction ID.
      * @param  string  $transactionId
      * @return Response
+     * @throws SignHostException
      */
-    public function DeleteTransaction($transactionId)
+    public function deleteTransaction($transactionId)
     {
-        $ch = curl_init($this->ApiEndpoint."/transaction/".$transactionId);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            "Content-Length: 0",
-            "Accept: application/vnd.signhost.".self::API_VERSION."+json",
-            "User-Agent: Signhost PHP Client/".self::CLIENT_VERSION,
-            "Application: APPKey ".$this->AppKey,
-            "Authorization: APIKey ".$this->ApiKey,
-        ));
-
-        $response = new Response($ch);
-        curl_close($ch);
-
-        return $response;
+        return $this->performRequest('DELETE', '/transaction/'.$transactionId);
     }
 
     /**
      * Starts an existing transaction by providing a transaction ID.
      * @param  string  $transactionId
      * @return Response
+     * @throws SignHostException
      */
-    public function StartTransaction($transactionId)
+    public function startTransaction($transactionId)
     {
-        $ch = curl_init($this->ApiEndpoint."/transaction/".$transactionId."/start");
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            "Content-Length: 0",
-            "Accept: application/vnd.signhost.".self::API_VERSION."+json",
-            "User-Agent: Signhost PHP Client/".self::CLIENT_VERSION,
-            "Application: APPKey ".$this->AppKey,
-            "Authorization: APIKey ".$this->ApiKey,
-        ));
+        $response = $this->client->performRequest("/transaction/".$transactionId."/start", "PUT");
 
-        $response = new Response($ch);
-        curl_close($ch);
-
-        return $response;
+        return json_decode($response, $this->shouldReturnArray);
     }
 
     /**
@@ -170,30 +124,16 @@ class Signhost
      * @param  string  $fileId
      * @param  string  $filePath
      * @return Response
+     * @throws SignHostException
      */
-    public function AddOrReplaceFile($transactionId, $fileId, $filePath)
+    public function addOrReplaceFile($transactionId, $fileId, $filePath)
     {
-        $checksum_file = base64_encode(pack('H*', hash_file('sha256', $filePath)));
-        $fh = fopen($filePath, 'r');
-        $ch = curl_init($this->ApiEndpoint."/transaction/".$transactionId."/file/".rawurlencode($fileId));
-        curl_setopt($ch, CURLOPT_PUT, 1);
-        curl_setopt($ch, CURLOPT_INFILE, $fh);
-        curl_setopt($ch, CURLOPT_INFILESIZE, filesize($filePath));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            "Accept: application/vnd.signhost.".self::API_VERSION."+json",
-            "User-Agent: Signhost PHP Client/".self::CLIENT_VERSION,
-            "Content-Type: application/pdf",
-            "Application: APPKey ".$this->AppKey,
-            "Authorization: APIKey ".$this->ApiKey,
-            "Digest: SHA256=".$checksum_file,
-        ));
-
-        $response = new Response($ch);
-        curl_close($ch);
-        fclose($fh);
-
-        return $response;
+        return $this->performRequest(
+            'PUT',
+            "/transaction/$transactionId/file/".rawurlencode($fileId),
+            null,
+            $filePath
+        );
     }
 
     /**
@@ -201,24 +141,14 @@ class Signhost
      * @param  string  $transactionId
      * @param  string  $fileId
      * @return Response
+     * @throws SignHostException
      */
-    public function GetDocument($transactionId, $fileId)
+    public function getDocument($transactionId, $fileId)
     {
-        $ch = curl_init($this->ApiEndpoint."/transaction/".$transactionId."/file/".rawurlencode($fileId));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            "Accept: ".
-            "application/pdf, ".
-            "application/vnd.signhost.".self::API_VERSION."+json",
-            "User-Agent: Signhost PHP Client/".self::CLIENT_VERSION,
-            "Application: APPKey ".$this->AppKey,
-            "Authorization: APIKey ".$this->ApiKey,
-        ));
-
-        $response = new Response($ch);
-        curl_close($ch);
-
-        return $response;
+        return $this->performBinaryRequest(
+            'GET',
+            "/transaction/$transactionId/file/".rawurlencode($fileId)
+        );
     }
 
     /**
@@ -227,53 +157,36 @@ class Signhost
      * @param  string  $fileId
      * @param  FileMetadata  $metadata
      * @return Response
+     * @throws SignHostException
      */
-    public function AddOrReplaceMetadata($transactionId, $fileId, $metadata)
+    public function addOrReplaceMetadata($transactionId, $fileId, $metadata)
     {
-        $ch = curl_init($this->ApiEndpoint."/transaction/".$transactionId."/file/".rawurlencode($fileId));
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($metadata));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            "Accept: application/vnd.signhost.".self::API_VERSION."+json",
-            "User-Agent: Signhost PHP Client/".self::CLIENT_VERSION,
-            "Content-Type: application/json",
-            "Application: APPKey ".$this->AppKey,
-            "Authorization: APIKey ".$this->ApiKey,
-        ));
-
-        $response = new Response($ch);
-        curl_close($ch);
-
-        return $response;
+        return $this->performRequest(
+            'PUT',
+            "/transaction/$transactionId/file/".rawurlencode($fileId),
+            $metadata
+        );
     }
 
     /**
      * Gets the receipt of a finished transaction by providing a transaction ID.
      * @param  string  $transactionId
      * @return Response
+     * @throws SignHostException
      */
-    public function GetReceipt($transactionId)
+    public function getReceipt($transactionId)
     {
-        $ch = curl_init($this->ApiEndpoint."/file/receipt/".$transactionId);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            "Accept: ".
-            "application/pdf, ".
-            "application/vnd.signhost.".self::API_VERSION."+json",
-            "User-Agent: Signhost PHP Client/".self::CLIENT_VERSION,
-            "Application: APPKey ".$this->AppKey,
-            "Authorization: APIKey ".$this->ApiKey,
-        ));
-
-        $response = new Response($ch);
-        curl_close($ch);
-
-        return $response;
+        return $this->performBinaryRequest(
+            'GET',
+            "/file/receipt/$transactionId"
+        );
     }
 
-    public function SetupScribbleTransaction(array $documentsigners, string $signMessage = 'Could you please sign this document', bool $SignRequest = false)
-    {
+    public function SetupScribbleTransaction(
+        array $documentsigners,
+        string $signMessage = 'Could you please sign this document',
+        bool $SignRequest = false
+    ) {
         $signers = [];
         foreach ($documentsigners as $signer) {
             $scribbleVerification = new ScribbleVerification();
@@ -291,5 +204,14 @@ class Signhost
         return $transaction;
     }
 
+    public function validateChecksum(
+        string $masterTransactionId,
+        string $fileId,
+        string $status,
+        string $remoteChecksum
+    ): bool {
+        $localChecksum = sha1("$masterTransactionId|$fileId|$status|{$this->sharedSecret}");
+        return hash_equals($localChecksum, $remoteChecksum);
+    }
 
 }

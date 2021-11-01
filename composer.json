@@ -4,7 +4,14 @@
   "homepage": "https://github.com/pdik/laravel_signhost",
   "type": "package",
   "license": "mit",
-
+  "keywords": [
+    "pdik",
+    "ondertekenen",
+    "signhost",
+    "client",
+    "laravel",
+    "api"
+  ],
   "authors": [
     {
       "name": "pepijn dik",

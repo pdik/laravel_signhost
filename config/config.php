@@ -4,7 +4,7 @@ return [
      * Api key
      * Signhost
      */
-
+    'app_name'=> env('SIGNHOST_NAME'),
     'app_key'=> env('SIGNHOST_KEY'),
 
     /**
